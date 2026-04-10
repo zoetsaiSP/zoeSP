@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>TSP 專案週報進度追蹤 (Zoe)</title>
+    <style>
+        :root {
+            --jira-blue: #0052cc;
+            --header-bg: #172b4d;
+            --border: #dfe1e6;
+            --text: #172b4d;
+        }
+
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f5f7; margin: 20px; color: var(--text); }
+        .container { background: white; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); overflow: hidden; }
+        
+        h2 { padding: 15px; margin: 0; background: var(--header-bg); color: white; font-size: 18px; }
+
+        .gantt-layout { display: flex; position: relative; }
+
+        /* 左側固定列：Ticket 與負責人 */
+        .left-panel { width: 450px; flex-shrink: 0; background: #fafbfc; z-index: 10; border-right: 2px solid var(--border); }
+        
+        /* 右側滾動區域 */
+        .right-timeline { flex-grow: 1; overflow-x: hidden; cursor: grab; background: white; }
+        .right-timeline:active { cursor: grabbing; }
+
+        table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+        th, td { border: 1px solid var(--border); padding: 10px; font-size: 13px; word-break: break-all; }
+
+        .header-row { background: #f4f5f7; height: 50px; }
+        .project-header { background: #ebecf0; font-weight: bold; color: #44546f; }
+
+        /* Jira 連結樣式 */
+        .jira-link { color: var(--jira-blue); text-decoration: none; font-weight: 500; }
+        .jira-link:hover { text-decoration: underline; }
+        .assignee { color: #6b778c; font-size: 11px; margin-top: 4px; }
+
+        /* Comment 內容樣式 */
+        .comment-box { font-size: 12px; color: #253858; line-height: 1.4; background: #e3f2fd; border-radius: 3px; padding: 5px; border-left: 3px solid var(--jira-blue); }
+        
+        .date-col { width: 180px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📋 TSP 智取櫃/繳費機 - 每週進度 Update (Assignee: Zoe)</h2>
+    
+    <div class="gantt-layout">
+        <div class="left-panel">
+            <table>
+                <tr class="header-row"><th>Jira Ticket / Assignee</th></tr>
+                
+                <tr class="project-header"><td>松下智取櫃待解決問題</td></tr>
+                <tr><td><a href="https://jira.shopee.io/browse/TSP-101" class="jira-link">TSP-101</a><div class="assignee">👤 Zoe</div></td></tr>
+                
+                <tr class="project-header"><td>皇丞智取櫃待解決問題</td></tr>
+                <tr><td><a href="https://jira.shopee.io/browse/TSP-102" class="jira-link">TSP-102</a><div class="assignee">👤 Zoe</div></td></tr>
+
+                <tr class="project-header"><td>博辰智取櫃待解決問題</td></tr>
+                <tr><td><a href="https://jira.shopee.io/browse/TSP-103" class="jira-link">TSP-103</a><div class="assignee">👤 Zoe</div></td></tr>
+
+                <tr class="project-header"><td>博辰繳費機拉霸機待解決問題</td></tr>
+                <tr><td><a href="https://jira.shopee.io/browse/TSP-104" class="jira-link">TSP-104</a><div class="assignee">👤 Zoe</div></td></tr>
+
+                <tr class="project-header"><td>立保繳費機拉霸機待解決問題</td></tr>
+                <tr><td><a href="https://jira.shopee.io/browse/TSP-105" class="jira-link">TSP-105</a><div class="assignee">👤 Zoe</div></td></tr>
+
+                <tr class="project-header"><td>博辰繳費機廣告後台待解決問題</td></tr>
+                <tr><td><a href="https://jira.shopee.io/browse/TSP-106" class="jira-link">TSP-106</a><div class="assignee">👤 Zoe</div></td></tr>
+            </table>
+        </div>
+
+        <div class="right-timeline" id="dragScroll">
+            <div style="width: 2000px;"> <table id="progressTable">
+                    <thead>
+                        <tr class="header-row" id="weekHeader"></tr>
+                    </thead>
+                    <tbody id="progressBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const startDate = new Date('2026-04-10');
+    const weeksCount = 10; // 顯示 10 週
+    const headerRow = document.getElementById('weekHeader');
+    const bodyContainer = document.getElementById('progressBody');
+
+    // 1. 生成每週三的日期 (04/10 是週五，第一個週三是 04/15)
+    let dates = [];
+    let current = new Date(startDate);
+    
+    for(let i=0; i < weeksCount; i++) {
+        // 尋找下一個週三
+        let day = current.getDay();
+        let diff = (3 - day + 7) % 7;
+        if (diff === 0 && i === 0) diff = 0; // 如果起始就是週三
+        current.setDate(current.getDate() + diff);
+        
+        let dateStr = (current.getMonth()+1) + '/' + current.getDate();
+        dates.push(dateStr);
+        headerRow.innerHTML += `<th class="date-col">Week of ${dateStr} (Wed)</th>`;
+        
+        // 準備下一循環
+        current.setDate(current.getDate() + 7);
+    }
+
+    // 2. 模擬六個專案的 Comment 內容 (對應左側行數)
+    const mockComments = [
+        "Jira 大類列 (不填)",
+        "API 串接已完成，等待松下端回覆測試結果。",
+        "Jira 大類列 (不填)",
+        "與皇丞討論硬體接口，目前 Zoe 追蹤中。",
+        "Jira 大類列 (不填)",
+        "博辰讀卡機邏輯已修正，待環境部署。",
+        "Jira 大類列 (不填)",
+        "拉霸動畫 Bug 已排除，Zoe 已提交 PR。",
+        "Jira 大類列 (不填)",
+        "立保端出鈔模組測試中，目前進度 50%。",
+        "Jira 大類列 (不填)",
+        "廣告後台圖片上傳邏輯重構完成。"
+    ];
+
+    mockComments.forEach((comment, index) => {
+        let row = `<tr>`;
+        for(let j=0; j < weeksCount; j++) {
+            if (index % 2 === 0) { // 這是大類列
+                row += `<td style="background:#f8f9fa;"></td>`;
+            } else {
+                // 模擬只有最新一週有 Comment
+                let content = j === 0 ? `<div class="comment-box">${comment}</div>` : `<span style="color:#ccc">-</span>`;
+                row += `<td class="date-col">${content}</td>`;
+            }
+        }
+        row += `</tr>`;
+        bodyContainer.innerHTML += row;
+    });
+
+    // 3. 滑鼠拖拉邏輯
+    const slider = document.getElementById('dragScroll');
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+
+    slider.addEventListener('mousedown', (e) => {
+        isDown = true;
+        startX = e.pageX - slider.offsetLeft;
+        scrollLeft = slider.scrollLeft;
+    });
+    slider.addEventListener('mouseleave', () => isDown = false);
+    slider.addEventListener('mouseup', () => isDown = false);
+    slider.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - slider.offsetLeft;
+        const walk = (x - startX) * 2; 
+        slider.scrollLeft = scrollLeft - walk;
+    });
+</script>
+
+</body>
+</html>
